@@ -1,0 +1,51 @@
+[project]
+name = "credtrace"
+version = "0.1.0"
+description = "Credential usage / blast-radius tracker. Metadata only -- never stores secret values."
+requires-python = ">=3.12"
+
+[tool.vercel]
+# Vercel's Python runtime looks for a FastAPI `app` instance at a handful
+# of conventional root-level paths (app.py, main.py, index.py, ...) by
+# default. Ours lives at app/main.py instead, so it needs to be pointed
+# there explicitly rather than restructuring the project around Vercel's
+# convention.
+entrypoint = "app/main.py"
+
+[tool.ruff]
+line-length = 140
+target-version = "py312"
+exclude = [".venv"]
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes
+    "I",   # isort
+    "S",   # flake8-bandit (security lint rules, in addition to the standalone bandit CI job)
+    "B",   # flake8-bugbear
+    "UP",  # pyupgrade
+]
+ignore = [
+    "S101",  # assert usage (fine in tests, and we don't ship without tests)
+    "B008",  # `Depends(...)` in a function default is FastAPI's standard dependency-injection idiom
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101", "S105", "S106", "S107"]  # asserts + hardcoded test credentials are expected in tests
+"scripts/seed.py" = ["S106"]  # this script's whole job is to accept a password via env var
+
+[tool.bandit]
+exclude_dirs = [".venv", "tests"]
+# B101 (assert) excluded globally by Bandit's own default skip list already.
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+filterwarnings = [
+    "ignore::DeprecationWarning:starlette.testclient",
+    "ignore::DeprecationWarning:fastapi.testclient",
+]
+
+[tool.coverage.run]
+source = ["app"]
+omit = ["app/templating.py"]

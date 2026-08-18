@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Projects · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Projects</h1>
+    <div class="subtitle">Systems and services that consume credentials.</div>
+  </div>
+  {% if user.role.value in ('admin', 'editor') %}
+  <a href="/projects/new" class="btn">+ New project</a>
+  {% endif %}
+</div>
+
+<form method="get" action="/projects" class="search-row">
+  <input type="text" name="q" placeholder="Search by name…" value="{{ q }}">
+</form>
+
+<table>
+  <thead>
+    <tr><th>Name</th><th>Environment</th><th>Owner team</th><th>Depends on</th></tr>
+  </thead>
+  <tbody>
+    {% for p in projects %}
+    <tr>
+      <td><a href="/projects/{{ p.id }}" class="proj-name">{{ p.name }}</a></td>
+      <td><span class="badge env-{{ p.environment.value }}">{{ p.environment.value }}</span></td>
+      <td class="muted">{{ p.owner_team or '—' }}</td>
+      <td class="muted">{{ p.usages|length }} credential{{ 's' if p.usages|length != 1 else '' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4" class="faint">No projects found.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

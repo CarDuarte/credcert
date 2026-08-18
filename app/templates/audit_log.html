@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block title %}Audit log · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Audit log</h1>
+    <div class="subtitle">Last 500 events. Append-only -- never contains secret values or session tokens.</div>
+  </div>
+</div>
+
+<table>
+  <thead><tr><th>Timestamp</th><th>User</th><th>Action</th><th>Entity</th><th>Details</th><th>IP</th></tr></thead>
+  <tbody>
+    {% for e in entries %}
+    <tr>
+      <td class="mono muted">{{ e.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+      <td>{{ e.username }}</td>
+      <td><span class="badge">{{ e.action }}</span></td>
+      <td class="muted">{{ e.entity_type }}{{ ' #' ~ e.entity_id if e.entity_id else '' }}</td>
+      <td class="muted">{{ e.details or '—' }}</td>
+      <td class="mono faint">{{ e.ip_address or '—' }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="6" class="faint">No audit events yet.</td></tr>
+    {% endfor %}
+  </tbody>
+</table>
+{% endblock %}

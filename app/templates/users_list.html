@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Users · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Users</h1>
+    <div class="subtitle">Role-based access: viewer (read-only), editor (manage data), admin (manage users).</div>
+  </div>
+</div>
+
+{% if errors %}
+<div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<div class="two-col">
+  <div>
+    <table>
+      <thead><tr><th>Username</th><th>Role</th><th>Status</th><th>Last login</th><th></th></tr></thead>
+      <tbody>
+        {% for u in users %}
+        <tr>
+          <td class="mono">{{ u.username }}</td>
+          <td class="muted">{{ u.role.value }}</td>
+          <td>{{ 'active' if u.is_active else 'deactivated' }}</td>
+          <td class="muted">{{ u.last_login_at.strftime('%Y-%m-%d %H:%M') if u.last_login_at else 'never' }}</td>
+          <td>
+            {% if u.is_active and u.id != user.id %}
+            <form method="post" action="/users/{{ u.id }}/deactivate" class="inline-form" onsubmit="return confirm('Deactivate this user and revoke their sessions?');">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+              <button type="submit" class="link-button">deactivate</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  <div class="form-card">
+    <h2>Add user</h2>
+    <form method="post" action="/users/new">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required maxlength="64" pattern="[a-zA-Z0-9_.\-]+">
+      </div>
+      <div class="field">
+        <label for="password">Temporary password</label>
+        <input type="password" id="password" name="password" required minlength="12">
+        <div class="hint">At least 12 characters. The user should change it after first login.</div>
+      </div>
+      <div class="field">
+        <label for="role">Role</label>
+        <select id="role" name="role">
+          {% for r in roles %}
+          <option value="{{ r.value }}">{{ r.value }}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <button type="submit">Create user</button>
+    </form>
+  </div>
+</div>
+{% endblock %}

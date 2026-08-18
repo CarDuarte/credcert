@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% block title %}{{ project.name }} · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <div class="eyebrow">Project</div>
+    <h1 class="proj-name">{{ project.name }}</h1>
+    <div class="subtitle">
+      <span class="badge env-{{ project.environment.value }}">{{ project.environment.value }}</span>
+      {% if project.owner_team %}&nbsp;· owned by {{ project.owner_team }}{% endif %}
+      {% if project.repo_url %}&nbsp;· <a href="{{ project.repo_url }}" rel="noopener noreferrer">repo</a>{% endif %}
+    </div>
+  </div>
+  {% if user.role.value in ('admin', 'editor') %}
+  <div class="actions-row mb-0">
+    <a href="/projects/{{ project.id }}/edit" class="btn secondary">Edit</a>
+    <form method="post" action="/projects/{{ project.id }}/delete" onsubmit="return confirm('Delete this project and all its usage links?');" class="inline-form">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+      <button type="submit" class="danger">Delete</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+
+{% if project.description %}<p class="muted section">{{ project.description }}</p>{% endif %}
+
+<div class="section">
+  <h2>Credentials this project depends on ({{ project.usages|length }})</h2>
+  {% if project.usages %}
+  <table>
+    <thead><tr><th>Credential</th><th>Criticality</th><th>Where it's used</th><th></th></tr></thead>
+    <tbody>
+      {% for usage in project.usages %}
+      <tr>
+        <td><a href="/credentials/{{ usage.credential.id }}" class="cred-name">{{ usage.credential.name }}</a></td>
+        <td><span class="badge crit-{{ usage.credential.criticality.value }}">{{ usage.credential.criticality.value }}</span></td>
+        <td class="muted">{{ usage.usage_location }}</td>
+        <td>
+          {% if user.role.value in ('admin', 'editor') %}
+          <form method="post" action="/mappings/{{ usage.id }}/delete" class="inline-form" onsubmit="return confirm('Remove this dependency?');">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+            <input type="hidden" name="redirect_to" value="/projects/{{ project.id }}">
+            <button type="submit" class="link-button">unlink</button>
+          </form>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <p class="muted">No credentials linked to this project yet.</p>
+  {% endif %}
+</div>
+
+{% if user.role.value in ('admin', 'editor') %}
+<div class="section form-card">
+  <h2>Link a credential to this project</h2>
+  <form method="post" action="/mappings/new">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+    <input type="hidden" name="project_id" value="{{ project.id }}">
+    <input type="hidden" name="redirect_to" value="/projects/{{ project.id }}">
+    <div class="field">
+      <label for="credential_id">Credential</label>
+      <select id="credential_id" name="credential_id" required>
+        {% for c in all_credentials %}
+        <option value="{{ c.id }}">{{ c.name }} ({{ c.criticality.value }})</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="usage_location">Where it's used</label>
+      <input type="text" id="usage_location" name="usage_location" placeholder="e.g. AWS Secrets Manager path /prod/api-key" required maxlength="255">
+    </div>
+    <div class="field">
+      <label for="notes">Notes (optional)</label>
+      <textarea id="notes" name="notes" maxlength="2000"></textarea>
+    </div>
+    <button type="submit">Add link</button>
+  </form>
+</div>
+{% endif %}
+{% endblock %}

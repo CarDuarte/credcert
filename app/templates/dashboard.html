@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Dashboard · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <div>
+    <h1>Dashboard</h1>
+    <div class="subtitle">Where every credential is used, at a glance.</div>
+  </div>
+</div>
+
+<div class="stat-row">
+  <div class="stat-card">
+    <div class="value">{{ total_credentials }}</div>
+    <div class="label">Tracked credentials</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">{{ total_projects }}</div>
+    <div class="label">Tracked projects</div>
+  </div>
+  <div class="stat-card">
+    <div class="value">{{ total_mappings }}</div>
+    <div class="label">Usage links</div>
+  </div>
+  <div class="stat-card {{ 'critical' if overdue else '' }}">
+    <div class="value">{{ overdue|length }}</div>
+    <div class="label">Rotation overdue</div>
+  </div>
+  <div class="stat-card {{ 'warn' if unmapped else '' }}">
+    <div class="value">{{ unmapped|length }}</div>
+    <div class="label">Unmapped credentials</div>
+  </div>
+</div>
+
+<div class="two-col">
+  <div class="section">
+    <h2>Rotation overdue</h2>
+    {% if overdue %}
+    <table>
+      <thead><tr><th>Credential</th><th>Criticality</th><th>Last rotated</th></tr></thead>
+      <tbody>
+        {% for c in overdue %}
+        <tr>
+          <td><a href="/credentials/{{ c.id }}" class="cred-name">{{ c.name }}</a></td>
+          <td><span class="badge crit-{{ c.criticality.value }}">{{ c.criticality.value }}</span></td>
+          <td class="muted">{{ c.last_rotated_at.strftime('%Y-%m-%d') if c.last_rotated_at else 'never' }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+    <p class="muted">Nothing overdue. Nice.</p>
+    {% endif %}
+  </div>
+
+  <div class="section">
+    <h2>Unmapped credentials</h2>
+    {% if unmapped %}
+    <table>
+      <thead><tr><th>Credential</th><th>Criticality</th></tr></thead>
+      <tbody>
+        {% for c in unmapped %}
+        <tr>
+          <td><a href="/credentials/{{ c.id }}" class="cred-name">{{ c.name }}</a></td>
+          <td><span class="badge crit-{{ c.criticality.value }}">{{ c.criticality.value }}</span></td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    <p class="hint faint">A credential with no linked project means nobody has recorded where it's used yet -- its blast radius is unknown.</p>
+    {% else %}
+    <p class="muted">Every credential is mapped to at least one project.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

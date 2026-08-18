@@ -1,0 +1,32 @@
+services:
+  app:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      ENVIRONMENT: development
+      DEBUG: "false"
+      DATABASE_URL: "sqlite:////app/data/credtrace.db"
+      SECRET_KEY: "${SECRET_KEY:?Set SECRET_KEY in your .env file -- see .env.example}"
+      FORCE_HTTPS: "false"          # this compose file has no TLS termination in front of it
+      TRUSTED_HOSTS: "localhost,127.0.0.1"
+      SESSION_MAX_AGE_SECONDS: "28800"
+      MAX_FAILED_LOGINS: "5"
+      LOCKOUT_MINUTES: "15"
+    volumes:
+      - credtrace_data:/app/data
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/healthz')"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+    # Defense in depth even in dev: the app doesn't need to write anywhere
+    # except its own data volume.
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+
+volumes:
+  credtrace_data:

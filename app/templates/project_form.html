@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if project else 'New' }} project · CredTrace{% endblock %}
+{% block content %}
+<div class="page-header">
+  <h1>{{ 'Edit project' if project else 'New project' }}</h1>
+</div>
+
+{% if errors %}
+<div class="errors"><ul>{% for e in errors %}<li>{{ e }}</li>{% endfor %}</ul></div>
+{% endif %}
+
+<div class="form-card">
+  <form method="post" action="{{ '/projects/' ~ project.id ~ '/edit' if project else '/projects/new' }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token(request) }}">
+    <div class="field">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" required maxlength="128" value="{{ project.name if project else '' }}">
+    </div>
+    <div class="field">
+      <label for="description">Description</label>
+      <textarea id="description" name="description" maxlength="2000">{{ project.description if project else '' }}</textarea>
+    </div>
+    <div class="field">
+      <label for="repo_url">Repository URL</label>
+      <input type="url" id="repo_url" name="repo_url" maxlength="512" placeholder="https://github.com/org/repo" value="{{ project.repo_url if project else '' }}">
+    </div>
+    <div class="field">
+      <label for="environment">Environment</label>
+      <select id="environment" name="environment">
+        {% for e in environments %}
+        <option value="{{ e.value }}" {{ 'selected' if project and project.environment == e else '' }}>{{ e.value }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="field">
+      <label for="owner_team">Owner team</label>
+      <input type="text" id="owner_team" name="owner_team" maxlength="128" value="{{ project.owner_team if project else '' }}">
+    </div>
+    <div class="actions-row">
+      <button type="submit">{{ 'Save changes' if project else 'Create project' }}</button>
+      <a href="{{ '/projects/' ~ project.id if project else '/projects' }}" class="btn secondary">Cancel</a>
+    </div>
+  </form>
+</div>
+{% endblock %}

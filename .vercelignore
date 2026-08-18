@@ -1,0 +1,14 @@
+.venv
+.git
+.github
+tests/
+requirements-dev.txt
+*.md
+docker-compose.yml
+Dockerfile
+.env
+*.db
+.pytest_cache
+.ruff_cache
+.coverage
+alembic/versions/__pycache__

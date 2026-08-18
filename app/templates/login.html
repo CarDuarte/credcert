@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign in · CredTrace{% endblock %}
+{% block bare_content %}
+<div class="login-shell">
+  <div class="login-card">
+    <div class="brand"><span class="brand-mark">&gt;_</span><span class="brand-name">CredTrace</span></div>
+    <div class="tagline">Credential blast-radius tracker</div>
+
+    {% if error %}
+    <div class="errors"><ul><li>{{ error }}</li></ul></div>
+    {% endif %}
+
+    <form method="post" action="/login">
+      <input type="hidden" name="next" value="{{ next }}">
+      <div class="field">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" required autofocus autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+      </div>
+      <button type="submit">Sign in</button>
+    </form>
+  </div>
+</div>
+{% endblock %}
