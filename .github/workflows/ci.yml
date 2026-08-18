@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  schedule:
+    # New OS-level CVEs (like the util-linux one found while building this)
+    # get disclosed continuously, independent of whether this repo's code
+    # changes. A container that scanned clean last month isn't necessarily
+    # clean today. Re-scan weekly so a newly-disclosed base-image CVE gets
+    # caught even during a quiet week with no pushes.
+    - cron: "0 6 * * 1" # Monday 06:00 UTC
 
 permissions:
   contents: read

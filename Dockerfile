@@ -5,8 +5,8 @@ FROM python:3.12-slim AS builder
 
 WORKDIR /build
 
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        build-essential \
+RUN apt-get update && apt-get upgrade -y && apt-get install -y --no-install-recommends \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 COPY requirements.txt .
@@ -16,10 +16,22 @@ RUN pip install --no-cache-dir --user -r requirements.txt
 # --- Stage 2: minimal runtime image ---
 FROM python:3.12-slim AS runtime
 
+# Apply Debian's latest security patches to whatever OS packages are baked
+# into this base image tag. This matters because a `python:3.12-slim` tag
+# is a snapshot -- Debian can publish a fixed package (e.g. a util-linux
+# CVE fix) after that snapshot was built, and Docker Hub doesn't
+# automatically rebuild `python:3.12-slim` on every upstream OS patch. A
+# fresh `apt-get upgrade` here picks up whatever's actually current at
+# *our* build time, independent of when the base image itself was last
+# published. Re-run this build periodically (or wire a scheduled CI job)
+# rather than treating a clean scan today as permanent -- new OS CVEs get
+# disclosed continuously.
+RUN apt-get update && apt-get upgrade -y && rm -rf /var/lib/apt/lists/*
+
 # Metadata for provenance / vulnerability-scanner context.
 LABEL org.opencontainers.image.title="CredTrace" \
-      org.opencontainers.image.description="Credential usage / blast-radius tracker (metadata only)" \
-      org.opencontainers.image.source="https://github.com/your-org/credtrace"
+    org.opencontainers.image.description="Credential usage / blast-radius tracker (metadata only)" \
+    org.opencontainers.image.source="https://github.com/your-org/credtrace"
 
 # Least privilege: run as a dedicated, unprivileged, non-login user -- never root.
 RUN groupadd --gid 10001 credtrace && \

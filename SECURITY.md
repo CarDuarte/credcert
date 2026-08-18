@@ -60,6 +60,42 @@ merges on noise. The honest AppSec move is: turn them on informational,
 triage a week or two of findings, suppress the false positives with
 justification, *then* flip them to blocking. Don't skip the second step.
 
+## A real supply-chain lesson from building this pipeline
+
+In March 2026, `aquasecurity/trivy-action` (the container scanner this
+pipeline uses) was actually compromised: attackers force-pushed malicious
+code onto 76 of 77 version *tags* in the repo. Anyone whose workflow
+referenced a tag like `@0.28.0` during the ~12-hour exposure window ran
+attacker-controlled code in their CI pipeline. The maintainers' fix was to
+republish all tags with a `v` prefix (`v0.35.0`, `v0.36.0`, ...) pointing
+back at verified-legitimate commits.
+
+This pipeline was originally pinned to `@0.28.0` (bare, no `v`) — which
+broke outright once the old tag scheme was retired, which is how this got
+caught. The fix (`.github/workflows/ci.yml`) moved to `@v0.36.0`, with a
+comment explaining why. The more thorough fix, worth doing before trusting
+this pipeline with anything real, is pinning every third-party action in
+this file to an exact commit SHA rather than any tag — tags can be moved
+by anyone with write access to the upstream repo (or, as this incident
+shows, by an attacker who compromises that access); commit SHAs cannot.
+
+## Test-fixture secrets and secret scanners doing their job correctly
+
+`gitleaks` (the `secret-scan` CI job) once flagged a string in
+`tests/test_credentials.py` as a leaked Stripe key. It wasn't a real key —
+it was test data verifying that `app/schemas.py` rejects raw-looking
+secrets pasted into `vault_reference` — but gitleaks was *right* to flag
+it: the fixture was deliberately shaped like `sk_live_...`, which is
+exactly the pattern a real Stripe key follows. The fix was two-part: stop
+using real-looking secret formats in test fixtures going forward (an
+alphanumeric string with no provider-specific prefix tests the same
+validation logic without ever matching a scanner's rules), and add the
+historical commit's fingerprint to `.gitleaksignore` with a comment
+explaining why, since git history is immutable and the old commit will be
+rescanned on every future run. Every entry in that file needs a
+justification — an unexplained fingerprint there is itself worth
+questioning in review.
+
 ## What was actually verified vs. what's a reasonable default
 
 Verified by running it: all 31 tests pass, ruff/bandit/pip-audit are all
