@@ -9,8 +9,9 @@ requires-python = ">=3.12"
 # of conventional root-level paths (app.py, main.py, index.py, ...) by
 # default. Ours lives at app/main.py instead, so it needs to be pointed
 # there explicitly rather than restructuring the project around Vercel's
-# convention.
-entrypoint = "app/main.py"
+# convention. Format is Python's dotted module path + ":" + the variable
+# name
+entrypoint = "app.main:app"
 
 [tool.ruff]
 line-length = 140
