@@ -35,6 +35,63 @@ jobs:
       - run: ruff check app/ scripts/ tests/
 
   # ---------------------------------------------------------------------
+  # 1b. requirements.txt and pyproject.toml's [project.dependencies] must
+  #     be kept in sync (see the comment in pyproject.toml for why the
+  #     duplication exists at all -- Vercel's build reads one, Docker/CI
+  #     read the other). Catch drift here instead of finding out via a
+  #     broken deploy.
+  # ---------------------------------------------------------------------
+  check-deps-in-sync:
+    name: Check requirements.txt / pyproject.toml are in sync
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Compare pinned package sets
+        run: |
+          python3 - <<'EOF'
+          import re
+          import sys
+          import tomllib
+
+          def parse_requirements(path):
+              pins = {}
+              for line in open(path):
+                  line = line.split("#", 1)[0].strip()
+                  if not line:
+                      continue
+                  name, _, rest = line.partition("==")
+                  pins[name.lower()] = rest.split(";")[0].strip()
+              return pins
+
+          def parse_pyproject(path):
+              with open(path, "rb") as f:
+                  data = tomllib.load(f)
+              pins = {}
+              for entry in data["project"]["dependencies"]:
+                  spec = entry.split(";")[0].strip()
+                  name, _, version = spec.partition("==")
+                  pins[name.lower()] = version.strip()
+              return pins
+
+          reqs = parse_requirements("requirements.txt")
+          pyproj = parse_pyproject("pyproject.toml")
+
+          if reqs != pyproj:
+              only_reqs = {k: v for k, v in reqs.items() if pyproj.get(k) != v}
+              only_pyproj = {k: v for k, v in pyproj.items() if reqs.get(k) != v}
+              print("requirements.txt and pyproject.toml have drifted apart:")
+              if only_reqs:
+                  print("  in requirements.txt but different/missing in pyproject.toml:", only_reqs)
+              if only_pyproj:
+                  print("  in pyproject.toml but different/missing in requirements.txt:", only_pyproj)
+              sys.exit(1)
+          print(f"OK -- {len(reqs)} packages match between both files.")
+          EOF
+
+  # ---------------------------------------------------------------------
   # 2. Unit / integration tests with coverage (SQLite, the default dev DB)
   # ---------------------------------------------------------------------
   test:
