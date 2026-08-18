@@ -33,7 +33,13 @@ def test_vault_reference_rejects_raw_looking_secrets(client, editor_user):
         data={
             "name": "suspicious",
             "criticality": "low",
-            "vault_reference": "sk_live_abcdef1234567890",  # looks like an actual key, not a pointer
+            # Deliberately NOT shaped like any real provider's secret format
+            # (Stripe, AWS, GitHub, etc.) -- using a real-looking prefix like
+            # "sk_live_..." here would make gitleaks (correctly!) flag this
+            # test fixture as a leaked credential on every scan, forever,
+            # since git history is immutable. This still exercises the same
+            # validation path: alphanumeric, no spaces, no separators.
+            "vault_reference": "totallyNotARealSecretValue12345",
             "csrf_token": token,
         },
     )

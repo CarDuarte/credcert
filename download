@@ -1,0 +1,16 @@
+# Gitleaks fingerprint allowlist -- one fingerprint per line.
+#
+# Every entry here needs a comment explaining WHY it's a false positive,
+# not a real leaked secret. Treat additions to this file the same as any
+# other code change: an unexplained fingerprint is a red flag, not a
+# routine suppression. Do not add an entry here for anything that might
+# actually be a real credential -- rotate it instead.
+
+# tests/test_credentials.py, historical commit ccbef1e0: a test fixture
+# value shaped like a Stripe secret key ("sk_live_...") used to verify that
+# app/schemas.py rejects raw-looking secrets pasted into vault_reference.
+# It was never a real credential. Fixed going forward in a later commit to
+# use a fixture that doesn't match any known provider's secret format, but
+# this fingerprint stays allowlisted since git history is immutable and
+# gitleaks scans full history by default.
+ccbef1e0ce4042543fae9f58049fd585e1c8ef0c:tests/test_credentials.py:stripe-access-token:36

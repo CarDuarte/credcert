@@ -200,7 +200,17 @@ jobs:
           tags: credtrace:ci
           load: true
       - name: Scan image with Trivy
-        uses: aquasecurity/trivy-action@0.28.0
+        # Pinned to the v-prefixed tag deliberately: in March 2026,
+        # attackers compromised aquasecurity/trivy-action by force-pushing
+        # malicious code onto 76 of 77 *tag* references (a real supply-chain
+        # attack, not a hypothetical one -- see
+        # https://github.com/aquasecurity/trivy/security/advisories/GHSA-69fq-xp46-6x23).
+        # Their fix was to re-publish all tags with a `v` prefix pointing at
+        # the verified-legitimate commits, so `v0.36.0` here is meaningfully
+        # different from (and safer than) an old bare `0.28.0`-style tag.
+        # For a real production pipeline, pin to the exact commit SHA
+        # instead of any tag -- tags can be moved, commit SHAs cannot.
+        uses: aquasecurity/trivy-action@v0.36.0
         with:
           image-ref: credtrace:ci
           format: table
